@@ -1,0 +1,24 @@
+{
+  "Size": 329,
+  "MarginRight": 24,
+  "MarginTop": 24,
+  "Opacity": 0.98,
+  "Round": true,
+  "RotateWithCamera": true,
+  "OnlyWhenGameFocused": false,
+  "Zoom": 47032.84538164148,
+  "ZoomLevels": [
+    12000,
+    24000,
+    48000,
+    96000
+  ],
+  "KeyToggle": "F6",
+  "KeyZoom": "F7",
+  "KeyRotate": "F8",
+  "KeySettings": "F9",
+  "MinX": -261500,
+  "MaxX": 73500,
+  "MinY": -137500,
+  "MaxY": 197500
+}
