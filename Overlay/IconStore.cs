@@ -41,8 +41,8 @@ public sealed class IconStore
             var todo = paths.Where(p => stale || !File.Exists(Path.Combine(dir, NameOf(p) + ".png"))).ToList();
             if (todo.Count == 0) return;
             string exe = Path.Combine(AppContext.BaseDirectory, "extractor", "Extractor.exe");
-            if (!File.Exists(exe)) { log("Falta extractor\\Extractor.exe: se usan iconos simples"); return; }
-            log($"Extrayendo {todo.Count} iconos del juego...");
+            if (!File.Exists(exe)) { log("extractor\\Extractor.exe is missing: using simple icons"); return; }
+            log($"Extracting {todo.Count} game icons...");
             bool allOk = true;
             foreach (var batch in todo.Chunk(80))
             {
@@ -52,13 +52,13 @@ public sealed class IconStore
                 var err = p.StandardError.ReadToEndAsync();
                 p.StandardOutput.ReadToEnd();
                 if (!p.WaitForExit(180_000)) { try { p.Kill(); } catch { } }
-                if (p.ExitCode != 0) { allOk = false; log($"Algunos iconos no se pudieron extraer: {err.Result.Trim().Replace(Environment.NewLine, "; ")}"); }
+                if (p.ExitCode != 0) { allOk = false; log($"Some icons could not be extracted: {err.Result.Trim().Replace(Environment.NewLine, "; ")}"); }
             }
             // Only remember the paks version once everything that can be extracted was.
             if (allOk) File.WriteAllText(stampFile, stamp);
-            log("Iconos del juego listos");
+            log("Game icons ready");
         }
-        catch (Exception ex) { log("Error extrayendo iconos: " + ex.Message); }
+        catch (Exception ex) { log("Error extracting icons: " + ex.Message); }
         finally { version++; }
     }
 

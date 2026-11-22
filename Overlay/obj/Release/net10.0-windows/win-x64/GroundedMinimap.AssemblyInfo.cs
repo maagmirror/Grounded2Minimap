@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GroundedMinimap")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+188796d96b1547f7cdd261c95b48af9515a36966")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f2f30cfdbf66b6f829c2890a69a35519cb2f4dba")]
 [assembly: System.Reflection.AssemblyProductAttribute("GroundedMinimap")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GroundedMinimap")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

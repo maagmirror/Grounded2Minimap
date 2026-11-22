@@ -1,0 +1,56 @@
+# Every push to main builds the minimap and publishes a GitHub release with the download.
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build
+        shell: pwsh
+        run: ./build.ps1 -Version "1.0.${{ github.run_number }}"
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $pkg = "pkg/GroundedMinimap"
+          New-Item -ItemType Directory $pkg -Force | Out-Null
+          Copy-Item dist/GroundedMinimap.exe $pkg/
+          Copy-Item dist/extractor $pkg/extractor -Recurse
+          Compress-Archive -Path "$pkg/*" -DestinationPath GroundedMinimap.zip
+
+      - name: Publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v1.0.${{ github.run_number }}"
+          $commit = git log -1 --pretty=%B
+          @"
+          $commit
+
+          ## Download
+
+          **GroundedMinimap.zip** has everything: unzip it anywhere and run ``GroundedMinimap.exe``.
+          ``GroundedMinimap.exe`` alone also works, but without the ``extractor`` folder it can only show the main map and uses simple icons.
+
+          Requires the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (``winget install Microsoft.DotNet.DesktopRuntime.10``).
+          "@ | Out-File notes.md -Encoding utf8
+          gh release create $tag GroundedMinimap.zip dist/GroundedMinimap.exe --title "Grounded 2 Minimap $tag" --notes-file notes.md --target $env:GITHUB_SHA

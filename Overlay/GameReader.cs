@@ -61,7 +61,7 @@ public sealed class GameReader
     const string ProcName = "Grounded2Steam-Win64-Shipping";
 
     public volatile Snapshot Snap = new();
-    public volatile string Status = "Buscando Grounded 2...";
+    public volatile string Status = L.T("Looking for Grounded 2...", "Buscando Grounded 2...");
     public int GamePid => m?.Pid ?? 0;
     public string GameExePath { get; private set; }
     public Action<string> Log = _ => { };
@@ -129,7 +129,7 @@ public sealed class GameReader
                     Snap = new Snapshot();
                     m?.Dispose(); m = null; ue = null; engine = 0; opt = null; level = null;
                     creatureActors = Array.Empty<ulong>(); poiComps = Array.Empty<(ulong, ulong, ulong)>();
-                    Status = "Buscando Grounded 2...";
+                    Status = L.T("Looking for Grounded 2...", "Buscando Grounded 2...");
                     if (!TryAttach()) { Thread.Sleep(2000); continue; }
                 }
                 if (engine == 0 && !Resolve()) { Thread.Sleep(3000); continue; }
@@ -137,15 +137,15 @@ public sealed class GameReader
                 var s = ReadLocal(out ulong pc);
                 if (s.Valid)
                 {
-                    if (tick % 60 == 0) level = Safe(() => ReadLevel(), level, "nivel");
+                    if (tick % 60 == 0) level = Safe(() => ReadLevel(), level, "level data");
                     if (tick % 30 == 0) friends = ReadFriends(s);
-                    if (tick % 15 == 0) marks = Safe(() => ReadMarks(pets = new HashSet<ulong>()), marks, "marcadores");
-                    if (tick % 3 == 0) creatures = Safe(() => ReadCreatures(pets), creatures, "bichos");
-                    if (tick % 60 == 30) pois = Safe(() => ReadPois(pc), pois, "lugares");
+                    if (tick % 15 == 0) marks = Safe(() => ReadMarks(pets = new HashSet<ulong>()), marks, "markers");
+                    if (tick % 3 == 0) creatures = Safe(() => ReadCreatures(pets), creatures, "creatures");
+                    if (tick % 60 == 30) pois = Safe(() => ReadPois(pc), pois, "places");
                     s.Friends = friends; s.Marks = marks; s.Creatures = creatures; s.Pois = pois; s.Level = level;
                     Status = "OK";
                 }
-                else Status = "En el menu / cargando...";
+                else Status = L.T("In the menu / loading...", "En el menú / cargando...");
                 Snap = s;
                 tick++;
             }
@@ -167,7 +167,7 @@ public sealed class GameReader
         try { return f(); }
         catch (Exception ex)
         {
-            if (warned.Add(what)) Log($"No se pudo leer {what}: {ex.Message}");
+            if (warned.Add(what)) Log($"Could not read {what}: {ex.Message}");
             return fallback;
         }
     }
@@ -176,10 +176,10 @@ public sealed class GameReader
     {
         m = Mem.Attach(ProcName);
         if (m == null) return false;
-        Status = "Leyendo datos del juego...";
+        Status = L.T("Reading game data...", "Leyendo datos del juego...");
         try { GameExePath = System.Diagnostics.Process.GetProcessById(m.Pid).MainModule?.FileName; } catch { }
         ue = new UE(m);
-        if (!ue.Init(_ => { })) { Status = "No se pudo leer el juego (version incompatible?)"; m.Dispose(); m = null; return false; }
+        if (!ue.Init(_ => { })) { Status = L.T("Could not read the game (incompatible version?)", "No se pudo leer el juego (¿versión incompatible?)"); m.Dispose(); m = null; return false; }
         return true;
     }
 
@@ -187,7 +187,7 @@ public sealed class GameReader
     {
         ulong c = ue.FindObject((cls.EndsWith("CameraCacheEntry") || cls.EndsWith("MinimalViewInfo") ? "ScriptStruct " : "Class ") + cls);
         int o = c == 0 ? -1 : ue.PropOffset(c, prop);
-        if (o < 0) throw new Exception($"offset {cls}.{prop} no encontrado");
+        if (o < 0) throw new Exception($"offset {cls}.{prop} not found");
         return o;
     }
 
@@ -218,7 +218,7 @@ public sealed class GameReader
             ulong o = ue.GetObject(i);
             if (o != 0 && ue.IsA(o, engCls) && !ue.ObjName(o).StartsWith("Default__")) engine = o;
         }
-        if (engine == 0) { Status = "GameEngine no encontrado"; return false; }
+        if (engine == 0) { Status = L.T("GameEngine not found", "GameEngine no encontrado"); return false; }
         opt = ResolveOptional();
         return true;
     }
@@ -226,18 +226,18 @@ public sealed class GameReader
     Optional ResolveOptional()
     {
         var o = new Optional();
-        void Try(string what, Action a) { try { a(); } catch (Exception ex) { Log($"Sin {what}: {ex.Message}"); } }
-        int P(ulong cls, string name) { int r = cls == 0 ? -1 : ue.PropOffset(cls, name); if (r < 0) throw new Exception(name + " no encontrado"); return r; }
+        void Try(string what, Action a) { try { a(); } catch (Exception ex) { Log($"Disabled {what}: {ex.Message}"); } }
+        int P(ulong cls, string name) { int r = cls == 0 ? -1 : ue.PropOffset(cls, name); if (r < 0) throw new Exception(name + " not found"); return r; }
         // Find a property by a predicate on its name (for names the game may tweak).
         int PLike(ulong cls, Func<string, bool> pred)
         {
             for (ulong c = cls; c != 0; c = m.P(c + (ulong)ue.S_Super))
                 for (ulong f = m.P(c + (ulong)ue.S_ChildProps); f != 0; f = m.P(f + (ulong)ue.F_Next))
                     if (ue.Name(m.R<uint>(f + (ulong)ue.F_Name)) is string s && pred(s)) return m.R<int>(f + (ulong)ue.P_Offset);
-            throw new Exception("propiedad no encontrada");
+            throw new Exception("property not found");
         }
 
-        Try("datos de nivel", () =>
+        Try("level data", () =>
         {
             ulong gi = m.P(engine + (ulong)oGameInstance);
             o.oLevelData = P(ue.ObjClass(gi), "LevelData");
@@ -247,7 +247,7 @@ public sealed class GameReader
             o.ldMin = P(ld, "MinBounds"); o.ldMax = P(ld, "MaxBounds"); o.ldTex = P(ld, "MapTextureSize");
             o.ldWidget = PLike(ld, s => s.StartsWith("MapBa") && s.EndsWith("Widget"));
         });
-        Try("marcadores", () =>
+        Try("markers", () =>
         {
             ulong mgrCls = ue.FindObject("Class /Script/Maine.HUDMarkerManagerComponent");
             ulong arrSt = ue.FindObject("ScriptStruct /Script/Maine.HUDMarkerArray");
@@ -262,9 +262,9 @@ public sealed class GameReader
             o.mkColor = P(md, "Color"); o.mkColorVar = P(md, "MarkerTypeColorVariant");
             o.mkHidden = P(md, "HiddenByPlayers"); o.mkRef = P(md, "ReferenceActor"); o.mkVariant = P(md, "MarkerTypeVariant");
             o.markerTypes = ue.EnumNames(ue.FindObject("Enum /Script/Maine.EHUDMarkerType"));
-            if (o.markerTypes.Length == 0) throw new Exception("EHUDMarkerType vacio");
+            if (o.markerTypes.Length == 0) throw new Exception("EHUDMarkerType is empty");
         });
-        Try("colores de marcadores", () =>
+        Try("marker colors", () =>
         {
             // GlobalUIData.HUDMarkerColorOptions: the palette the player picks pin colors from.
             ulong uiCls = ue.FindObject("Class /Script/Maine.GlobalUIData");
@@ -281,15 +281,15 @@ public sealed class GameReader
                 o.markerColors = c;
             }
         });
-        Try("iconos del mapa", () => ResolveIcons(o, P));
-        Try("bichos", () =>
+        Try("map icons", () => ResolveIcons(o, P));
+        Try("creatures", () =>
         {
             o.creatureCls = ue.FindObject("Class /Script/Maine.SurvivalCreature");
             o.oHealth = P(o.creatureCls, "HealthComponent");
             o.oHealthState = P(ue.FindObject("Class /Script/Maine.HealthComponent"), "HealthState");
             o.deadState = Array.IndexOf(ue.EnumNames(ue.FindObject("Enum /Script/Maine.EHealthState")), "Dead");
         });
-        Try("lugares", () =>
+        Try("places", () =>
         {
             o.poiCompCls = ue.FindObject("Class /Script/Maine.PointOfInterestComponent");
             o.oPoiData = P(o.poiCompCls, "PointOfInterestData");
@@ -300,7 +300,7 @@ public sealed class GameReader
         var all = o.markerIcons.Values.SelectMany(v => v).Concat(o.legendIcons.Values).Where(v => v != null).Distinct().ToArray();
         IconPaths = all;
         PlayerIcon = o.legendIcons.GetValueOrDefault("Player");
-        if (all.Length > 0) Log($"Iconos del mapa del juego: {all.Length}");
+        if (all.Length > 0) Log($"Game map icons: {all.Length}");
         return o;
     }
 
@@ -335,7 +335,7 @@ public sealed class GameReader
             // Prefer the level-specific data asset (e.g. GlobalUIData_Augusta) over the base one.
             if (ui == 0 || name != "GlobalUIData") ui = ob;
         }
-        if (ui == 0) throw new Exception("GlobalUIData no encontrado");
+        if (ui == 0) throw new Exception("GlobalUIData not found");
 
         ulong brushSt = ue.FindObject("ScriptStruct /Script/SlateCore.SlateBrush");
         int brushSize = ue.StructSize(brushSt), oRes = P(brushSt, "ResourceObject");

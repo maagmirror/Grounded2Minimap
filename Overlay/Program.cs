@@ -5,10 +5,12 @@ static class Program
     [STAThread]
     static void Main()
     {
+        var cfg = Config.Load();
+        L.Init(cfg.Language);
         using var single = new Mutex(true, "GroundedMinimapOverlay", out bool first);
-        if (!first) { MessageBox.Show("El minimapa ya esta abierto (icono en la bandeja).", "Grounded 2 Minimap"); return; }
+        if (!first && !Demo.On) { MessageBox.Show(L.T("The minimap is already running (icon in the system tray).", "El minimapa ya está abierto (ícono en la bandeja)."), "Grounded 2 Minimap"); return; }
         ApplicationConfiguration.Initialize();
-        Application.Run(new Overlay(Config.Load()));
+        Application.Run(new Overlay(cfg));
     }
 
     // App icon at a given size (tray = small icon size for the current DPI).
@@ -43,6 +45,9 @@ static class Program
 
 public sealed class Config
 {
+    // "auto" (Windows language), "en" or "es"
+    public string Language { get; set; } = "auto";
+
     // --- Minimap
     public int Size { get; set; } = 260;
     public int MarginRight { get; set; } = 24;

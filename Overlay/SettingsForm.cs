@@ -4,6 +4,9 @@ public sealed class SettingsForm : Form
     readonly Config cfg;
     readonly Overlay overlay;
     bool syncing;
+    readonly bool quiet;
+    public bool Quiet => quiet;
+    protected override bool ShowWithoutActivation => quiet;
 
     readonly TrackBar tbSize = new() { Minimum = Config.SizeMin, Maximum = Config.SizeMax, TickFrequency = 50, SmallChange = 10, LargeChange = 50 };
     readonly TrackBar tbZoom = new() { Minimum = 0, Maximum = 100, TickFrequency = 10 };
@@ -12,38 +15,40 @@ public sealed class SettingsForm : Form
     readonly TrackBar tbBigZoom = new() { Minimum = 0, Maximum = 100, TickFrequency = 10 };
     readonly TrackBar tbIcons = new() { Minimum = Config.IconSizeMin, Maximum = Config.IconSizeMax, TickFrequency = 4, SmallChange = 1, LargeChange = 4 };
     readonly Label lbSize = new(), lbZoom = new(), lbOpacity = new(), lbBigSize = new(), lbBigZoom = new(), lbIcons = new();
-    readonly RadioButton rbRound = new() { Text = "Redondo", AutoSize = true };
-    readonly RadioButton rbSquare = new() { Text = "Cuadrado", AutoSize = true };
-    readonly CheckBox cbRotate = Check("Girar el mapa con la camara");
-    readonly CheckBox cbFocus = Check("Ocultar cuando no estoy en el juego (Alt+Tab)");
-    readonly CheckBox cbSmooth = Check("Movimiento suave");
-    readonly CheckBox cbCompass = Check("Brujula (N, E, S, O)");
-    readonly CheckBox cbTrail = Check("Rastro de por donde pasaste");
+    readonly RadioButton rbRound = new() { Text = L.T("Round", "Redondo"), AutoSize = true };
+    readonly RadioButton rbSquare = new() { Text = L.T("Square", "Cuadrado"), AutoSize = true };
+    readonly CheckBox cbRotate = Check(L.T("Rotate the map with the camera", "Girar el mapa con la cámara"));
+    readonly CheckBox cbFocus = Check(L.T("Hide when the game isn't focused (Alt+Tab)", "Ocultar cuando no estoy en el juego (Alt+Tab)"));
+    readonly CheckBox cbSmooth = Check(L.T("Smooth movement", "Movimiento suave"));
+    readonly CheckBox cbCompass = Check(L.T("Compass (N, E, S, W)", "Brújula (N, E, S, O)"));
+    readonly CheckBox cbTrail = Check(L.T("Trail of where you've been", "Rastro de por dónde pasaste"));
     readonly NumericUpDown nuTrail = new() { Minimum = 10, Maximum = 3600, Increment = 30, Width = 70 };
-    readonly CheckBox cbFriends = Check("Amigos");
-    readonly CheckBox cbMarkers = Check("Marcadores del mapa del juego");
+    readonly CheckBox cbFriends = Check(L.T("Friends", "Amigos"));
+    readonly CheckBox cbMarkers = Check(L.T("Markers from the game map", "Marcadores del mapa del juego"));
     readonly Dictionary<MarkKind, CheckBox> cbKinds = new();
-    readonly CheckBox cbPois = Check("Lugares descubiertos");
-    readonly CheckBox cbPoiNames = Check("Con nombre");
-    readonly CheckBox cbCreatures = Check("Bichos cercanos");
-    readonly CheckBox cbCreatureNames = Check("Con nombre");
-    readonly CheckBox cbOnlyHostile = Check("Solo hostiles");
-    readonly CheckBox cbBigHold = Check("Mantener apretada (si no, aprieta para abrir y cerrar)");
+    readonly CheckBox cbPois = Check(L.T("Discovered places", "Lugares descubiertos"));
+    readonly CheckBox cbPoiNames = Check(L.T("With names", "Con nombre"));
+    readonly CheckBox cbCreatures = Check(L.T("Nearby creatures", "Bichos cercanos"));
+    readonly CheckBox cbCreatureNames = Check(L.T("With names", "Con nombre"));
+    readonly CheckBox cbOnlyHostile = Check(L.T("Hostile only", "Solo hostiles"));
+    readonly CheckBox cbBigHold = Check(L.T("Hold the key (otherwise press to open and close)", "Mantener apretada (si no, apretar para abrir y cerrar)"));
     readonly NumericUpDown nuRight = new() { Minimum = 0, Maximum = 2000, Width = 70 };
     readonly NumericUpDown nuTop = new() { Minimum = 0, Maximum = 2000, Width = 70 };
+    readonly ComboBox cbLang = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 120, FlatStyle = FlatStyle.Flat };
+    static readonly string[] LangCodes = { "auto", "en", "es" };
     readonly ComboBox cbKeyToggle = KeyCombo(), cbKeyZoom = KeyCombo(), cbKeyRotate = KeyCombo(), cbKeySettings = KeyCombo(), cbKeyBig = KeyCombo();
 
     static readonly (MarkKind kind, string text)[] KindTexts =
     {
-        (MarkKind.Pin, "Tus marcadores (con nombre)"),
-        (MarkKind.Bed, "Camas y puntos de reaparicion"),
-        (MarkKind.Ping, "Pings y recursos marcados"),
-        (MarkKind.Quest, "Misiones y objetivos"),
-        (MarkKind.Backpack, "Mochila u objetos tirados"),
-        (MarkKind.Pet, "Mascota"),
-        (MarkKind.Collectible, "Coleccionables"),
-        (MarkKind.Base, "Alertas de la base"),
-        (MarkKind.Other, "Otros (lo que el juego agregue)"),
+        (MarkKind.Pin, L.T("Your markers (with names)", "Tus marcadores (con nombre)")),
+        (MarkKind.Bed, L.T("Beds and respawn points", "Camas y puntos de reaparición")),
+        (MarkKind.Ping, L.T("Pings and marked resources", "Pings y recursos marcados")),
+        (MarkKind.Quest, L.T("Quests and objectives", "Misiones y objetivos")),
+        (MarkKind.Backpack, L.T("Dropped backpack or items", "Mochila u objetos tirados")),
+        (MarkKind.Pet, L.T("Pet", "Mascota")),
+        (MarkKind.Collectible, L.T("Collectibles", "Coleccionables")),
+        (MarkKind.Base, L.T("Base alerts", "Alertas de la base")),
+        (MarkKind.Other, L.T("Other (anything new the game adds)", "Otros (lo que el juego agregue)")),
     };
 
     static readonly Color BgCol = Color.FromArgb(32, 34, 30), FgCol = Color.FromArgb(235, 230, 215), Accent = Color.FromArgb(222, 196, 120), Muted = Color.FromArgb(170, 165, 150);
@@ -53,18 +58,29 @@ public sealed class SettingsForm : Form
     public SettingsForm(Config c, Overlay o)
     {
         cfg = c; overlay = o;
-        Text = "Grounded 2 Minimap - Configuracion";
+        Text = "Grounded 2 Minimap - " + L.T("Settings", "Configuración");
         Icon = Program.AppIcon(new Size(32, 32));
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false; MinimizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
         TopMost = true;
+        // --settings-pos=X,Y opens the window at that screen position without taking focus
+        // (used by tools\screenshots.ps1 so it doesn't get in the way).
+        var pos = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--settings-pos=", StringComparison.OrdinalIgnoreCase));
+        if (pos != null && pos["--settings-pos=".Length..].Split(',') is [var px, var py] && int.TryParse(px, out int x) && int.TryParse(py, out int y))
+        {
+            StartPosition = FormStartPosition.Manual;
+            Location = new Point(x, y);
+            TopMost = false;
+            quiet = true;
+        }
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoSize = true; AutoSizeMode = AutoSizeMode.GrowAndShrink;
         BackColor = BgCol; ForeColor = FgCol;
         Font = new Font("Segoe UI", 9.5f);
         Padding = new Padding(14);
 
+        cbLang.Items.AddRange(new object[] { L.T("Automatic", "Automático"), "English", "Español" });
         foreach (var (k, txt) in KindTexts) cbKinds[k] = new CheckBox { Text = txt, AutoSize = true, Margin = new Padding(20, 3, 0, 0) };
 
         TableLayoutPanel NewTable()
@@ -104,51 +120,52 @@ public sealed class SettingsForm : Form
         Label Hint(string s) => new() { Text = s, AutoSize = true, MaximumSize = new Size(360, 0), ForeColor = Muted, Margin = new Padding(20, 2, 0, 0) };
 
         // ---- left column: the minimap itself
-        Header("Minimapa");
-        Row("Tamaño", WithLabel(tbSize, lbSize));
+        Header(L.T("Minimap", "Minimapa"));
+        Row(L.T("Language", "Idioma"), cbLang);
+        Row(L.T("Size", "Tamaño"), WithLabel(tbSize, lbSize));
         Row("Zoom", WithLabel(tbZoom, lbZoom));
-        Row("Opacidad", WithLabel(tbOpacity, lbOpacity));
-        Row("Iconos", WithLabel(tbIcons, lbIcons));
-        Row("Forma", Flow(0, rbRound, rbSquare));
+        Row(L.T("Opacity", "Opacidad"), WithLabel(tbOpacity, lbOpacity));
+        Row(L.T("Icons", "Íconos"), WithLabel(tbIcons, lbIcons));
+        Row(L.T("Shape", "Forma"), Flow(0, rbRound, rbSquare));
         Full(cbRotate);
         Full(cbFocus);
         Full(cbSmooth);
 
-        Header("Posicion (desde la esquina superior derecha)");
-        Row("Margen derecho", Flow(0, nuRight, Unit("px")));
-        Row("Margen arriba", Flow(0, nuTop, Unit("px")));
+        Header(L.T("Position (from the top-right corner)", "Posición (desde la esquina superior derecha)"));
+        Row(L.T("Right margin", "Margen derecho"), Flow(0, nuRight, Unit("px")));
+        Row(L.T("Top margin", "Margen arriba"), Flow(0, nuTop, Unit("px")));
 
-        Header("Mapa grande");
-        Row("Tamaño", WithLabel(tbBigSize, lbBigSize));
+        Header(L.T("Big map", "Mapa grande"));
+        Row(L.T("Size", "Tamaño"), WithLabel(tbBigSize, lbBigSize));
         Row("Zoom", WithLabel(tbBigZoom, lbBigZoom));
         Full(cbBigHold);
 
-        Header("Teclas");
-        Row("Mostrar / ocultar", cbKeyToggle);
-        Row("Cambiar zoom", cbKeyZoom);
-        Row("Girar con camara", cbKeyRotate);
-        Row("Mapa grande", cbKeyBig);
-        Row("Abrir esta ventana", cbKeySettings);
+        Header(L.T("Keys", "Teclas"));
+        Row(L.T("Show / hide", "Mostrar / ocultar"), cbKeyToggle);
+        Row(L.T("Change zoom", "Cambiar zoom"), cbKeyZoom);
+        Row(L.T("Rotate with camera", "Girar con la cámara"), cbKeyRotate);
+        Row(L.T("Big map", "Mapa grande"), cbKeyBig);
+        Row(L.T("Open this window", "Abrir esta ventana"), cbKeySettings);
 
         // ---- right column: what to draw
         t = right;
-        Header("Que mostrar");
+        Header(L.T("What to show", "Qué mostrar"));
         Full(cbCompass);
-        Full(Flow(0, cbTrail, Unit("de los ultimos"), nuTrail, Unit("segundos")));
+        Full(Flow(0, cbTrail, Unit(L.T("for the last", "de los últimos")), nuTrail, Unit(L.T("seconds", "segundos"))));
         Full(cbFriends);
         Full(cbMarkers);
-        Full(Hint("Lo mismo que muestra el mapa del juego. Si el juego oculta un marcador, aca tampoco aparece."));
+        Full(Hint(L.T("The same things the game's map shows. Markers hidden in the game are hidden here too.", "Lo mismo que muestra el mapa del juego. Si el juego oculta un marcador, acá tampoco aparece.")));
         foreach (var (k, _) in KindTexts) Full(cbKinds[k]);
         Full(Flow(0, cbPois, cbPoiNames));
-        Full(Hint("Solo los que ya descubriste."));
+        Full(Hint(L.T("Only the ones you have already discovered.", "Solo los que ya descubriste.")));
         Full(Flow(0, cbCreatures, cbCreatureNames, cbOnlyHostile));
-        Full(Hint("Triangulo rojo = hostil, rombo naranja = neutral, circulo verde = pacifico. Las listas se pueden editar en minimap.json."));
+        Full(Hint(L.T("Red triangle = hostile, orange diamond = neutral, green circle = passive. The lists can be edited in minimap.json.", "Triángulo rojo = hostil, rombo naranja = neutral, círculo verde = pacífico. Las listas se pueden editar en minimap.json.")));
 
         var cols = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
         cols.Controls.Add(left); cols.Controls.Add(right);
 
-        var btnReset = new Button { Text = "Restablecer", AutoSize = true, FlatStyle = FlatStyle.Flat, Margin = new Padding(0, 0, 8, 0) };
-        var btnClose = new Button { Text = "Listo", AutoSize = true, FlatStyle = FlatStyle.Flat, BackColor = Accent, ForeColor = Color.Black };
+        var btnReset = new Button { Text = L.T("Reset", "Restablecer"), AutoSize = true, FlatStyle = FlatStyle.Flat, Margin = new Padding(0, 0, 8, 0) };
+        var btnClose = new Button { Text = L.T("Done", "Listo"), AutoSize = true, FlatStyle = FlatStyle.Flat, BackColor = Accent, ForeColor = Color.Black };
         btnReset.Click += (_, _) => ResetDefaults();
         btnClose.Click += (_, _) => Close();
         var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, Margin = new Padding(0, 16, 0, 0) };
@@ -165,6 +182,14 @@ public sealed class SettingsForm : Form
         tbSize.ValueChanged += (_, _) => Apply(() => cfg.Size = tbSize.Value, layout: true);
         tbZoom.ValueChanged += (_, _) => Apply(() => cfg.Zoom = SliderToZoom(tbZoom.Value));
         tbOpacity.ValueChanged += (_, _) => Apply(() => cfg.Opacity = tbOpacity.Value / 100.0, layout: true);
+        cbLang.SelectedIndexChanged += (_, _) =>
+        {
+            if (syncing) return;
+            cfg.Language = LangCodes[Math.Max(0, cbLang.SelectedIndex)];
+            cfg.Save();
+            L.Init(cfg.Language);
+            overlay.ReopenSettings();
+        };
         tbIcons.ValueChanged += (_, _) => Apply(() => cfg.IconSize = tbIcons.Value);
         tbBigSize.ValueChanged += (_, _) => Apply(() => cfg.BigMapPercent = tbBigSize.Value, layout: true);
         tbBigZoom.ValueChanged += (_, _) => Apply(() => cfg.BigMapZoom = SliderToZoom(tbBigZoom.Value));
@@ -223,7 +248,7 @@ public sealed class SettingsForm : Form
         // Zoom shown relative to default (24000 units = 100%).
         lbZoom.Text = $"{24000 / cfg.Zoom * 100:0}%";
         lbOpacity.Text = $"{cfg.Opacity * 100:0}%";
-        lbBigSize.Text = $"{cfg.BigMapPercent}% alto";
+        lbBigSize.Text = $"{cfg.BigMapPercent}% " + L.T("height", "alto");
         lbIcons.Text = $"{cfg.IconSize} px";
         lbBigZoom.Text = $"{24000 / cfg.BigMapZoom * 100:0}%";
     }
@@ -244,6 +269,7 @@ public sealed class SettingsForm : Form
         tbOpacity.Value = (int)Math.Round(cfg.Opacity * 100);
         tbBigSize.Value = cfg.BigMapPercent;
         tbIcons.Value = cfg.IconSize;
+        cbLang.SelectedIndex = Math.Max(0, Array.IndexOf(LangCodes, cfg.Language));
         tbBigZoom.Value = Math.Clamp(ZoomToSlider(cfg.BigMapZoom), 0, 100);
         rbRound.Checked = cfg.Round; rbSquare.Checked = !cfg.Round;
         cbRotate.Checked = cfg.RotateWithCamera;
@@ -277,7 +303,7 @@ public sealed class SettingsForm : Form
         // Keep the creature word lists and fallback bounds the user may have edited by hand.
         var d = new Config
         {
-            PassiveCreatures = cfg.PassiveCreatures, NeutralCreatures = cfg.NeutralCreatures,
+            PassiveCreatures = cfg.PassiveCreatures, NeutralCreatures = cfg.NeutralCreatures, Language = cfg.Language,
             MinX = cfg.MinX, MaxX = cfg.MaxX, MinY = cfg.MinY, MaxY = cfg.MaxY, ZoomLevels = cfg.ZoomLevels,
         };
         foreach (var p in typeof(Config).GetProperties().Where(p => p.CanWrite)) p.SetValue(cfg, p.GetValue(d));

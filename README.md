@@ -1,137 +1,164 @@
 # Grounded 2 Minimap
 
-Minimapa en overlay para **Grounded 2** (Steam). Se dibuja arriba a la derecha de la pantalla, encima del juego, con tu posición, hacia dónde mirás, tus amigos y lo mismo que muestra el mapa del juego (tus marcadores, camas, pings, misiones, mochila, mascota, coleccionables, lugares descubiertos), con los mismos íconos y colores.
+An overlay minimap for **Grounded 2** (Steam). It sits in the top-right corner of the screen and shows where you are, which way you're facing, your friends, and the same things the in-game map shows: your markers, beds, pings, quests, dropped backpack, pet, collectibles and discovered places, with the game's own icons and colors.
 
-- **Solo lectura**: lee la memoria del juego con `ReadProcessMemory`. No escribe, no inyecta DLLs y no modifica archivos del juego (los `.pak` solo se leen).
-- **Liviano**: ~0,1 % de CPU, no usa la GPU del juego.
-- **Aguanta actualizaciones**: no usa offsets ni listas fijas. Todo se encuentra por nombre con la reflexión de Unreal Engine y se lee de las tablas del propio juego: niveles, límites del mapa, tipos de marcador, íconos, colores, bichos. Si el juego agrega zonas, niveles, marcadores o bichos, aparecen solos.
+- **Read-only**: it reads the game's memory with `ReadProcessMemory`. It never writes to the game, injects nothing and doesn't modify game files (the `.pak` files are only read).
+- **Lightweight**: around 0.1% CPU, and it doesn't touch the game's GPU.
+- **Survives updates**: there are no hardcoded offsets or lists. Everything is found by name through Unreal Engine's reflection and read from the game's own data: levels, map bounds, marker types, icons, colors and creatures. New areas, levels, markers or creatures show up on their own.
+- **English and Spanish**: follows the Windows language, or pick one in the settings.
 
-## Uso
+| Round | With nearby creatures | Square |
+|:---:|:---:|:---:|
+| <img src="screenshots/minimap-round.png" width="240" alt="Round minimap with markers, friend and trail"> | <img src="screenshots/minimap-creatures.png" width="240" alt="Minimap showing nearby creatures by attitude"> | <img src="screenshots/minimap-square.png" width="240" alt="Square minimap"> |
+| Your arrow, trail, friend, base, beds and markers | Hostile ▲ red, neutral ◆ orange, passive ● green | Square, with discovered place names |
 
-1. Poné el juego en **ventana sin bordes** (borderless). En pantalla completa exclusiva el overlay no se ve.
-2. Ejecutá `dist\GroundedMinimap.exe`, antes o después de abrir el juego.
-3. Aparece un ícono en la bandeja de Windows. Con **clic derecho** abrís el menú (configuración y salir) y con **doble clic** la configuración.
+## Download
 
-| Tecla | Acción |
-|-------|--------|
-| **F6** | Mostrar / ocultar el minimapa |
-| **F7** | Pasar al siguiente nivel de zoom |
-| **F8** | Norte fijo arriba o girar con la cámara |
-| **F10** | Mapa grande (mantener apretada, o apretar para abrir y cerrar) |
-| **F9** | Abrir la configuración |
+Grab **GroundedMinimap.zip** from the [latest release](../../releases/latest), unzip it anywhere and run `GroundedMinimap.exe`.
 
-Las teclas se pueden cambiar en la configuración. Solo responden cuando el juego está en primer plano.
+You need the **.NET 10 Desktop Runtime**: `winget install Microsoft.DotNet.DesktopRuntime.10` (or [download it](https://dotnet.microsoft.com/download/dotnet/10.0)).
 
-### Configuración
+Keep the `extractor` folder next to the exe: it's what pulls the map and icons out of the game files. Without it the minimap still works, but only with the built-in main map and simple icons.
 
-Ventana con F9, doble clic en el ícono, o `GroundedMinimap.exe --settings`. Los cambios se ven en el momento (mientras está abierta, el minimapa queda visible como vista previa).
+## Usage
 
-**Minimapa**: tamaño, zoom, opacidad, forma redonda o cuadrada, girar con la cámara, ocultar con Alt+Tab, movimiento suave, márgenes. **Mapa grande**: tamaño (% del alto de la ventana del juego), zoom, mantener apretada o alternar. **Teclas**.
+1. Set the game to **borderless window**. The overlay can't draw over exclusive fullscreen.
+2. Run `GroundedMinimap.exe`, before or after starting the game.
+3. An icon appears in the system tray: **right-click** for the menu, **double-click** for the settings.
 
-**Qué mostrar** (cada cosa se activa o desactiva):
+| Key | Action |
+|-----|--------|
+| **F6** | Show / hide the minimap |
+| **F7** | Next zoom level |
+| **F8** | North up, or rotate with the camera |
+| **F10** | Big map (hold it, or press to open and close) |
+| **F9** | Open the settings |
 
-- Brújula (N, E, S, O).
-- Rastro de por dónde pasaste en los últimos N segundos.
-- Amigos (con el ícono de jugador del juego y su nombre; si están fuera de vista quedan en el borde señalando hacia dónde están).
-- Marcadores del mapa del juego, por grupo: tus marcadores (con nombre y color), camas y reaparición, pings y recursos marcados, misiones, mochila u objetos tirados, mascota, coleccionables, alertas de la base, y "otros" (tipos que el juego agregue en el futuro). Los que el jugador ocultó en el mapa del juego tampoco aparecen.
-- Lugares descubiertos (solo los que ya descubriste), con o sin nombre.
-- Bichos cercanos, con o sin nombre, o solo hostiles. Forma y color según el carácter: triángulo rojo = hostil, rombo naranja = neutral, círculo verde = pacífico. Un bicho nuevo cuenta como hostil hasta que se agregue a `PassiveCreatures` / `NeutralCreatures`.
+Keys can be changed in the settings and only work while the game is in the foreground.
 
-Todo se guarda en `dist\minimap.json`, que también se puede editar a mano. Ahí están además `ZoomLevels` (los niveles que recorre F7), las listas de bichos pacíficos/neutrales y unos límites de mapa de respaldo (`MinX/MaxX/MinY/MaxY`, solo se usan si no se pudieran leer del juego).
+**Big map (F10)**: the whole level over the game, with the level name, compass, discovered places with their names, markers and friends.
 
-`dist\minimap.log` registra la conexión con el juego, las extracciones y lo que no se pudo leer. Si algo falla, mirá ahí primero. Se recorta solo cuando pasa de 256 KB.
+<img src="screenshots/bigmap.png" width="600" alt="Big map over the game">
 
-## Requisitos
+## Settings
 
-- Windows 10/11 x64
-- **.NET 10 Desktop Runtime** para ejecutar el exe. Si se lo pasás a un amigo, tiene que instalarlo:
-  `winget install Microsoft.DotNet.DesktopRuntime.10`
-- Pasale la carpeta `dist` entera (con `extractor\`): sin el extractor el minimapa anda igual, pero con el mapa embebido del nivel principal y con íconos simples.
+Open them with F9, by double-clicking the tray icon, or with `GroundedMinimap.exe --settings`. Changes apply instantly, and the minimap stays visible as a preview while the window is open.
 
-## Compilar
+![Settings](screenshots/settings-en.png)
 
-Requiere el **.NET 10 SDK** (`winget install Microsoft.DotNet.SDK.10`).
+- **Minimap**: language, size, zoom, opacity, icon size, round or square, rotate with the camera, hide on Alt+Tab, smooth movement, position.
+- **Big map**: size (as a % of the game window height), zoom, hold or toggle.
+- **What to show**, each one can be turned on or off:
+  - Compass (N, E, S, W).
+  - A trail of where you've been over the last N seconds.
+  - Friends, with the game's player icon and their name. When they're out of view they stay on the edge, pointing the way.
+  - Markers from the game map, by group: your markers (with their names and colors), beds and respawn points, pings and marked resources, quests, dropped backpack or items, pet, collectibles, base alerts, and "other" for anything new the game adds. Markers you hid on the game map stay hidden here too.
+  - Discovered places, with or without names. Only the ones you've already found.
+  - Nearby creatures, with or without names, or hostile only. Red triangle = hostile, orange diamond = neutral, green circle = passive. New creatures count as hostile until you add them to `PassiveCreatures` / `NeutralCreatures`.
+
+Everything is saved to `minimap.json` next to the exe, which you can also edit by hand. It also holds `ZoomLevels` (the steps F7 cycles through), the creature lists, and fallback map bounds (`MinX/MaxX/MinY/MaxY`) that are only used if the game's level data can't be read.
+
+`minimap.log` records the connection to the game, extractions and anything that couldn't be read. If something looks wrong, check it first. It trims itself once it passes 256 KB.
+
+<details>
+<summary>Configuración en español</summary>
+
+![Configuración](screenshots/settings-es.png)
+
+</details>
+
+## Building
+
+You need the **.NET 10 SDK** (`winget install Microsoft.DotNet.SDK.10`).
 
 ```powershell
 .\build.ps1
 ```
 
-Deja `dist\GroundedMinimap.exe` (~20 MB, lleva adentro el mapa principal para el primer arranque) y `dist\extractor\`.
+This produces `dist\GroundedMinimap.exe` (about 20 MB, it carries the main map for the first run) and `dist\extractor\`.
 
-Si ponés un `map.png` al lado del exe, se usa ese para el nivel principal en vez del extraído.
+A `map.png` placed next to the exe replaces the main map.
 
-## Estructura
+### Releases
+
+Every push to `main` runs `.github/workflows/release.yml`: it builds on GitHub Actions and publishes a release `v1.0.<run number>` with `GroundedMinimap.zip` (exe + extractor) and the bare `GroundedMinimap.exe`.
+
+## Project layout
 
 ```
-GroundedMinimap/
-├── build.ps1                 Compila el overlay y el extractor -> dist/
-├── dist/                     Ejecutable, extractor/, minimap.json, minimap.log
-│   ├── maps/                 (caché) mapa de cada nivel extraído de los .pak
-│   └── icons/                (caché) íconos del mapa del juego extraídos de los .pak
-├── map/grounded2_map.png     Mapa principal 4096x4096 (se embebe en el exe como respaldo)
-├── Overlay/                  Código del minimapa (WinForms, .NET 10)
-│   ├── Program.cs            Arranque, configuración (minimap.json), log
-│   ├── Overlay.cs            Ventana overlay, dibujo, teclas, mapa grande, ícono de bandeja
-│   ├── SettingsForm.cs       Ventana de configuración
-│   ├── GameReader.cs         Lectura del juego: jugador, amigos, nivel, marcadores, lugares, bichos
-│   ├── MapStore.cs           Mapa por nivel (caché + extracción cuando cambian los .pak)
-│   ├── IconStore.cs          Íconos del juego (caché + extracción)
-│   ├── UE.cs                 Lector de Unreal Engine 5 (FNamePool, GUObjectArray, reflexión)
-│   ├── app.ico               Ícono del exe, del tray y de la configuración
-│   └── make_icon.ps1         Genera app.ico (powershell -File make_icon.ps1 -Out app.ico)
-├── Extractor/                Extrae mapas e íconos de los .pak del juego (CUE4Parse)
-└── Probe/                    Herramienta de diagnóstico: imprime offsets y posición en consola
+Grounded2Minimap/
+├── build.ps1                 Builds the overlay and the extractor into dist/
+├── .github/workflows/        Build + release on every push to main
+├── dist/                     Exe, extractor/, minimap.json, minimap.log
+│   ├── maps/                 (cache) each level's map, extracted from the .pak files
+│   └── icons/                (cache) the game's map icons, extracted from the .pak files
+├── map/grounded2_map.png     Main map 4096x4096 (embedded in the exe as a fallback)
+├── Overlay/                  The minimap (WinForms, .NET 10)
+│   ├── Program.cs            Startup, settings file, log
+│   ├── Lang.cs               English / Spanish texts
+│   ├── Demo.cs               Sample data for --demo / --demo-big (screenshots without the game)
+│   ├── Overlay.cs            Overlay window, drawing, keys, big map, tray icon
+│   ├── SettingsForm.cs       Settings window
+│   ├── GameReader.cs         Reads the game: player, friends, level, markers, places, creatures
+│   ├── MapStore.cs           Map per level (cache + extraction when the .pak files change)
+│   ├── IconStore.cs          Game icons (cache + extraction)
+│   ├── UE.cs                 Unreal Engine 5 reader (FNamePool, GUObjectArray, reflection)
+│   ├── app.ico               App icon
+│   └── make_icon.ps1         Generates app.ico
+├── Extractor/                Pulls maps and icons out of the game's .pak files (CUE4Parse)
+├── Probe/                    Diagnostics: prints offsets and position to the console
+└── screenshots/
 ```
 
-## Cómo funciona
+## How it works
 
-### Conexión (`UE.cs`)
+### Attaching (`UE.cs`)
 
-1. Abre el proceso `Grounded2Steam-Win64-Shipping.exe` solo con permiso de lectura.
-2. Recorre las secciones de datos del exe buscando dos estructuras globales de Unreal, sin firmas de bytes:
-   - **FNamePool**: el primer bloque empieza con `"None"` y sigue con `"ByteProperty"`.
-   - **GUObjectArray**: patrón `Objects*, PreAlloc*, Max, Num, MaxChunks, NumChunks`. `NumChunks` puede ser mayor que lo que necesita `Num` (el motor reserva chunks de más), y cada candidato se valida comprobando el índice de varios objetos antes de aceptarlo. El tamaño de cada ítem (24 bytes en Grounded 2) se detecta solo.
-3. Con la reflexión del motor saca los offsets de cada propiedad por su nombre.
+1. Opens `Grounded2Steam-Win64-Shipping.exe` with read access only.
+2. Scans the exe's data sections for two Unreal globals, without byte signatures:
+   - **FNamePool**: the first block starts with `"None"` followed by `"ByteProperty"`.
+   - **GUObjectArray**: the `Objects*, PreAlloc*, Max, Num, MaxChunks, NumChunks` pattern. `NumChunks` can be larger than `Num` needs (the engine preallocates chunks), so each candidate is checked against the index of several objects before it's accepted. The item size (24 bytes in Grounded 2) is detected too.
+3. Uses the engine's reflection to look up every property offset by name.
 
-### Qué lee (`GameReader.cs`)
+### What it reads (`GameReader.cs`)
 
-| Dato | De dónde |
-|------|----------|
-| Tu posición (~30/s) | `GameEngine → GameInstance → LocalPlayers[0] → PlayerController → Pawn → RootComponent → RelativeLocation`; enganchado (tirolesa) usa la cámara |
-| Amigos | `World → GameState → PlayerArray → PlayerState.PawnPrivate` |
-| Nivel y límites del mapa | `SurvivalGameInstance.LevelData` (el nivel cuyo `RelLevel`/`DevLevel` coincide con el mundo actual): `MinBounds`, `MaxBounds`, `MapTextureSize`, widget de fondo del mapa |
-| Marcadores | `GameState.HUDMarkerManagerComponent`, todas sus listas `Registered*MarkerData`: posición, tipo (enum `EHUDMarkerType` leído por nombre), variante, color, nombre, ocultos |
-| Íconos y colores | `GlobalUIData`: `HUDMarkerBrushes` (textura por tipo y variante), `LegendIconMap`, `PointOfInterestTypeMappings`, `HUDMarkerColorOptions` |
-| Lugares descubiertos | Componentes `PointOfInterestComponent` del mundo, filtrados por `SurvivalPlayerState.DiscoveredPointsOfInterest` |
-| Bichos | Todo actor que herede de `SurvivalCreature`, sin muertos (`HealthComponent.HealthState`) ni mascotas |
+| Data | Source |
+|------|--------|
+| Your position (~30/s) | `GameEngine → GameInstance → LocalPlayers[0] → PlayerController → Pawn → RootComponent → RelativeLocation`; uses the camera while attached to something (ziplines) |
+| Friends | `World → GameState → PlayerArray → PlayerState.PawnPrivate` |
+| Level and map bounds | `SurvivalGameInstance.LevelData`, the entry whose `RelLevel`/`DevLevel` matches the current world: `MinBounds`, `MaxBounds`, `MapTextureSize`, map background widget |
+| Markers | Every `Registered*MarkerData` list in `GameState.HUDMarkerManagerComponent`: position, type (the `EHUDMarkerType` enum, read by name), variant, color, name, hidden flag |
+| Icons and colors | `GlobalUIData`: `HUDMarkerBrushes` (texture per type and variant), `LegendIconMap`, `PointOfInterestTypeMappings`, `HUDMarkerColorOptions` |
+| Discovered places | `PointOfInterestComponent`s in the world, filtered by `SurvivalPlayerState.DiscoveredPointsOfInterest` |
+| Creatures | Every actor deriving from `SurvivalCreature`, minus dead ones (`HealthComponent.HealthState`) and pets |
 
-Lugares y bichos salen de un hilo aparte que recorre `GUObjectArray` cada 2 s; después de la primera pasada solo mira los objetos que cambiaron. Cada grupo es opcional: si un parche renombra algo, solo se apaga esa parte y queda anotado en el log.
+Places and creatures come from a separate thread that walks `GUObjectArray` every 2 seconds; after the first pass it only looks at objects that changed. Each group is optional: if a patch renames something, only that part switches off and the log says so.
 
-### Mapas e íconos (`MapStore.cs`, `IconStore.cs`, `Extractor/`)
+### Maps and icons (`MapStore.cs`, `IconStore.cs`, `Extractor/`)
 
-- La carpeta de `.pak` sale de la ruta del exe del juego (`<Proyecto>\Binaries\Win64` → `<Proyecto>\Content\Paks`).
-- **Mapa**: el extractor abre el widget de fondo que indica `LevelData`, encuentra la textura que referencia y la decodifica. Se guarda en `dist\maps\<Nivel>.png` con una huella de los `.pak` (tamaño + fecha); si un parche los cambia se vuelve a extraer en segundo plano y mientras tanto se muestra el anterior.
-- **Íconos**: el extractor recibe la lista de texturas que el juego usa en su mapa y las guarda en `dist\icons\`. Se tiñen con el color del marcador, como en el juego. Los que el juego dibuja con materiales (no extraíbles) usan el ícono de la leyenda equivalente, o una forma simple.
-- No hay mappings (`.usmap`) públicos para esta versión, así que las texturas se leen de los bytes del paquete: el formato (`PF_BC7`, etc.) sale de la tabla de nombres y el único mip está al final del archivo. El tamaño sale de `LevelData` (mapa) o del tamaño del archivo (íconos cuadrados).
+- The `.pak` folder comes from the game's exe path (`<Project>\Binaries\Win64` → `<Project>\Content\Paks`).
+- **Map**: the extractor opens the background widget named in `LevelData`, finds the texture it references and decodes it into `dist\maps\<Level>.png`, together with a fingerprint of the `.pak` files (size + date). When a patch changes them, the map is extracted again in the background while the old one stays on screen.
+- **Icons**: the extractor gets the list of textures the game's map uses and saves them to `dist\icons\`. They're tinted with the marker's color, like in the game. Icons the game draws with materials (which can't be extracted) use the matching legend icon, or a simple shape.
+- There are no public mappings (`.usmap`) for this version, so textures are read from the raw package bytes: the pixel format (`PF_BC7`, etc.) comes from the name table and the single mip sits at the end of the file. The size comes from `LevelData` (map) or from the file size (square icons).
 
-Extractor a mano:
+Running the extractor by hand:
 
 ```powershell
-$paks = "F:\SteamLibrary\steamapps\common\Grounded2\Augusta\Content\Paks"
-dist\extractor\Extractor.exe map   $paks Augusta /Game/UI/Map/UI_MapBGBackyard 4096 4096 mapa.png
-dist\extractor\Extractor.exe icons $paks Augusta .\iconos /Game/UI/Images/MapIcons/T_UI_Flag_Map_Home
+$paks = "<Steam library>\steamapps\common\Grounded2\Augusta\Content\Paks"
+dist\extractor\Extractor.exe map   $paks Augusta /Game/UI/Map/UI_MapBGBackyard 4096 4096 map.png
+dist\extractor\Extractor.exe icons $paks Augusta .\icons /Game/UI/Images/MapIcons/T_UI_Flag_Map_Home
 ```
 
-### Diagnóstico
+### Diagnostics
 
 ```powershell
 cd Probe
 dotnet run -c Release
 ```
 
-Muestra en consola las estructuras encontradas, los offsets resueltos, el pawn local y su posición.
+Prints the structures it found, the resolved offsets, the local pawn and its position.
 
-## Notas
+## Notes
 
-- Probado con la build `Augusta-CL-3235807` de Steam.
-- Grounded 2 no trae anti-cheat. Igual, es una herramienta externa no oficial: usala bajo tu responsabilidad.
+- Tested with Steam build `Augusta-CL-3235807`.
+- Grounded 2 has no anti-cheat. Still, this is an unofficial external tool: use it at your own risk.

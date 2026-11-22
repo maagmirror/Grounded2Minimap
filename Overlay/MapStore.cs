@@ -79,9 +79,9 @@ public sealed class MapStore
         try
         {
             string exe = Path.Combine(AppContext.BaseDirectory, "extractor", "Extractor.exe");
-            if (!File.Exists(exe)) { log("Falta extractor\\Extractor.exe: no se puede actualizar el mapa"); lock (extracting) failed.Add(level.Name); return; }
+            if (!File.Exists(exe)) { log("extractor\\Extractor.exe is missing: the map can't be updated"); lock (extracting) failed.Add(level.Name); return; }
             Directory.CreateDirectory(dir);
-            log($"Extrayendo mapa de {level.Name}...");
+            log($"Extracting the map of {level.Name}...");
             string tmp = png + ".new.png";
             var psi = new ProcessStartInfo(exe)
             {
@@ -95,18 +95,18 @@ public sealed class MapStore
             if (!p.WaitForExit(180_000)) { try { p.Kill(); } catch { } }
             if (p.ExitCode != 0 || !File.Exists(tmp))
             {
-                log($"No se pudo extraer el mapa de {level.Name} (codigo {p.ExitCode}): {errTask.Result.Trim()}");
+                log($"Could not extract the map of {level.Name} (code {p.ExitCode}): {errTask.Result.Trim()}");
                 lock (extracting) failed.Add(level.Name);
                 return;
             }
             File.Move(tmp, png, true);
             File.WriteAllText(json, JsonSerializer.Serialize(want));
-            log($"Mapa de {level.Name} actualizado");
+            log($"Map of {level.Name} updated");
             ready = Load(File.OpenRead(png), level.Name);
         }
         catch (Exception ex)
         {
-            log($"Error extrayendo el mapa: {ex.Message}");
+            log($"Error extracting the map: {ex.Message}");
             lock (extracting) failed.Add(level.Name);
         }
         finally { lock (extracting) extracting.Remove(level.Name); }

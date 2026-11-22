@@ -62,19 +62,25 @@ public sealed class Overlay : Form
 
         tray = new NotifyIcon { Icon = Program.AppIcon(SystemInformation.SmallIconSize), Visible = true, Text = "Grounded 2 Minimap" };
         var menu = new ContextMenuStrip();
-        menu.Items.Add("Configuracion...", null, (_, _) => OpenSettings());
-        menu.Items.Add("Mostrar/ocultar", null, (_, _) => userHidden = !userHidden);
-        menu.Items.Add("Zoom siguiente", null, (_, _) => CycleZoom());
-        menu.Items.Add("Rotar con camara", null, (_, _) => ToggleRotate());
+        menu.Items.Add(L.T("Settings...", "Configuración..."), null, (_, _) => OpenSettings());
+        menu.Items.Add(L.T("Show / hide", "Mostrar / ocultar"), null, (_, _) => userHidden = !userHidden);
+        menu.Items.Add(L.T("Next zoom", "Zoom siguiente"), null, (_, _) => CycleZoom());
+        menu.Items.Add(L.T("Rotate with camera", "Girar con la cámara"), null, (_, _) => ToggleRotate());
         menu.Items.Add("-");
-        menu.Items.Add("Salir", null, (_, _) => Close());
+        menu.Items.Add(L.T("Exit", "Salir"), null, (_, _) => Close());
         tray.ContextMenuStrip = menu;
         tray.DoubleClick += (_, _) => OpenSettings();
-        tray.ShowBalloonTip(3000, "Grounded 2 Minimap", $"Activo. {cfg.KeyToggle}: mostrar/ocultar, {cfg.KeyZoom}: zoom, {cfg.KeyRotate}: rotar, {cfg.KeyBigMap}: mapa grande, {cfg.KeySettings}: configuracion.", ToolTipIcon.Info);
+        if (!demo) tray.ShowBalloonTip(3000, "Grounded 2 Minimap", L.T($"Running. {cfg.KeyToggle}: show/hide, {cfg.KeyZoom}: zoom, {cfg.KeyRotate}: rotate, {cfg.KeyBigMap}: big map, {cfg.KeySettings}: settings.", $"Activo. {cfg.KeyToggle}: mostrar/ocultar, {cfg.KeyZoom}: zoom, {cfg.KeyRotate}: girar, {cfg.KeyBigMap}: mapa grande, {cfg.KeySettings}: configuración."), ToolTipIcon.Info);
 
-        if (Environment.GetCommandLineArgs().Any(a => a.Equals("--settings", StringComparison.OrdinalIgnoreCase)))
+        if (Environment.GetCommandLineArgs().Any(a => a.Equals("--settings", StringComparison.OrdinalIgnoreCase) || a.StartsWith("--settings-pos=", StringComparison.OrdinalIgnoreCase)))
             Shown += (_, _) => OpenSettings();
-        reader.Start();
+        if (demo)
+        {
+            demoSnap = Demo.Snapshot();
+            trail.AddRange(Demo.Trail(demoSnap, Environment.TickCount64));
+            trailLevel = demoSnap.Level.Name;
+        }
+        else reader.Start();
         timer.Tick += (_, _) => { try { OnTick(); } catch (Exception ex) { LogOnce("tick", ex); } };
         timer.Start();
     }
@@ -103,8 +109,13 @@ public sealed class Overlay : Form
         return Math.Max(200, Math.Min(area.Width, area.Height) * cfg.BigMapPercent / 100);
     }
 
+    readonly bool demo = Demo.On;
+    Snapshot demoSnap;
+    string PlayerIcon => demo ? Demo.PlayerIcon : reader.PlayerIcon;
+
     Rectangle GameArea()
     {
+        if (demo) return Demo.Area();
         if (lastGameWnd != IntPtr.Zero && GetClientRect(lastGameWnd, out var rc) && rc.R > 0)
         {
             var tl = new Point(0, 0);
@@ -138,6 +149,16 @@ public sealed class Overlay : Form
 
     public void Redraw() { dirty = true; Invalidate(); }
 
+    // Rebuilds the settings window (after a language change).
+    public void ReopenSettings()
+    {
+        BeginInvoke(() =>
+        {
+            if (settings != null && !settings.IsDisposed) settings.Close();
+            OpenSettings();
+        });
+    }
+
     void OpenSettings()
     {
         if (settings == null || settings.IsDisposed)
@@ -146,7 +167,7 @@ public sealed class Overlay : Form
             settings.FormClosed += (_, _) => { cfg.Save(); settings = null; };
             settings.Show();
         }
-        settings.Activate();
+        if (!settings.Quiet) settings.Activate();
     }
 
     void CycleZoom()
@@ -197,13 +218,25 @@ public sealed class Overlay : Form
             else { if (Pressed(cfg.KeyBigMap)) bigToggled = !bigToggled; wantBig = bigToggled; }
         }
 
-        if (gameFocused && ++focusCheck % 15 == 0 && fg != lastGameWnd)
+        focusCheck++;
+        if (gameFocused && focusCheck % 15 == 0 && fg != lastGameWnd)
         {
             lastGameWnd = fg;
             PlaceNow();
         }
+        else if (!demo && !gameFocused && focusCheck % 60 == 0 && reader.GamePid != 0)
+        {
+            // Not in front (e.g. "hide on Alt+Tab" is off): still follow the game's window.
+            try
+            {
+                var h = System.Diagnostics.Process.GetProcessById(reader.GamePid).MainWindowHandle;
+                if (h != IntPtr.Zero && h != lastGameWnd) { lastGameWnd = h; PlaceNow(); }
+            }
+            catch { }
+        }
 
-        var s = reader.Snap;
+        var s = demo ? demoSnap : reader.Snap;
+        if (demo) { gameFocused = true; wantBig = Demo.Big; }
         if (wantBig != big && (s.Valid || !wantBig)) { big = wantBig; ApplyLayout(); }
 
         bool settingsOpen = settings != null && !settings.IsDisposed;
@@ -219,7 +252,7 @@ public sealed class Overlay : Form
         var tip = "Grounded 2 Minimap - " + reader.Status;
         tray.Text = tip.Length > 63 ? tip[..63] : tip;
 
-        icons.Ensure(reader.IconPaths, reader.GameExePath);
+        if (!demo) icons.Ensure(reader.IconPaths, reader.GameExePath);
 
         // Map image for the current level (may switch when the level changes or an update finishes).
         var m = maps.Get(s.Level, reader.GameExePath, map);
@@ -235,7 +268,7 @@ public sealed class Overlay : Form
         long now = Environment.TickCount64;
         double dt = Math.Clamp((now - lastTicks) / 1000.0, 0, 0.25);
         lastTicks = now;
-        UpdateTrail(s, now);
+        if (!demo) UpdateTrail(s, now);
         if (!show) { haveView = false; return; }
 
         // Ease the drawn position toward the latest reading.
@@ -281,12 +314,12 @@ public sealed class Overlay : Form
     readonly HashSet<string> loggedErrors = new();
     void LogOnce(string where, Exception ex)
     {
-        if (loggedErrors.Add(where + ex.GetType().Name)) Program.Log($"Error en {where}: {ex}");
+        if (loggedErrors.Add(where + ex.GetType().Name)) Program.Log($"Error in {where}: {ex}");
     }
 
     protected override void OnPaint(PaintEventArgs e)
     {
-        try { Paint(e.Graphics); } catch (Exception ex) { LogOnce("dibujo", ex); }
+        try { Paint(e.Graphics); } catch (Exception ex) { LogOnce("paint", ex); }
     }
 
     void Paint(Graphics g)
@@ -339,7 +372,7 @@ public sealed class Overlay : Form
         else
         {
             using var b = new SolidBrush(Color.FromArgb(160, 235, 230, 215));
-            var msg = "Mapa no disponible para este nivel";
+            var msg = L.T("No map available for this level", "Mapa no disponible para este nivel");
             var sz = g.MeasureString(msg, fontSmall);
             g.DrawString(msg, fontSmall, b, cx - sz.Width / 2, cy + 22);
         }
@@ -414,7 +447,7 @@ public sealed class Overlay : Form
                 var q = ToScreen(f.X, f.Y);
                 bool inside = Inside(q);
                 if (!inside) q = Clamp(q);
-                var pb = icons.Get(reader.PlayerIcon);
+                var pb = icons.Get(PlayerIcon);
                 if (pb != null) Icons.Image(g, pb, q, iconSize, Color.Empty, inside ? 1f : 0.85f);
                 else
                 {
@@ -431,7 +464,7 @@ public sealed class Overlay : Form
         if (cfg.ShowCompass)
         {
             float rr = (ViewRound ? W / 2 : W / 2 * 0.98f) - 12;
-            string[] names = { "N", "E", "S", "O" };
+            string[] names = { "N", "E", "S", L.T("W", "O") };
             for (int i = 0; i < 4; i++)
             {
                 // North = -Y in world (up on the map image); E = +X
