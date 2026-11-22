@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "dhvKoc5WMrY=",
+  "dgSpecHash": "YF+TUztur1Q=",
   "success": true,
-  "projectFilePath": "C:\\Users\\maagk\\GroundedMinimap\\Overlay\\GroundedMinimap.csproj",
+  "projectFilePath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Overlay\\GroundedMinimap.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\maagk\\.nuget\\packages\\microsoft.net.illink.tasks\\10.0.15\\microsoft.net.illink.tasks.10.0.15.nupkg.sha512",
     "C:\\Users\\maagk\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\10.0.15\\microsoft.netcore.app.runtime.win-x64.10.0.15.nupkg.sha512",

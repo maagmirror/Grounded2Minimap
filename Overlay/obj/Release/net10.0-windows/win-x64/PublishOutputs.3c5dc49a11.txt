@@ -1,0 +1,2 @@
+C:\Users\maagk\Documents\GitHub\ecommerce-nibiru\middlewares\Grounded2Minimap\dist\GroundedMinimap.pdb
+C:\Users\maagk\Documents\GitHub\ecommerce-nibiru\middlewares\Grounded2Minimap\dist\GroundedMinimap.exe

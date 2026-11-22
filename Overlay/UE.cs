@@ -58,7 +58,7 @@ public sealed class UE
     // UStruct / FField offsets (detected)
     public int S_Super = 0x40, S_ChildProps = 0x50;
     public int F_Next = 0x18, F_Name = 0x20, P_Offset = 0x44;
-    readonly Dictionary<uint, string> nameCache = new();
+    readonly System.Collections.Concurrent.ConcurrentDictionary<uint, string> nameCache = new();
 
     public UE(Mem m) { M = m; }
 
@@ -103,11 +103,14 @@ public sealed class UE
                         ulong objs = BitConverter.ToUInt64(buf, i);
                         int max = BitConverter.ToInt32(buf, i + 16), num = BitConverter.ToInt32(buf, i + 20);
                         int maxCh = BitConverter.ToInt32(buf, i + 24), numCh = BitConverter.ToInt32(buf, i + 28);
+                        // NumChunks can exceed what Num needs (chunks get preallocated), so only bound it.
                         if (Mem.ValidPtr(objs) && max >= 0x10000 && max < 0x4000000 && num > 0x1000 && num <= max
-                            && maxCh == (max + 0xFFFF) / 0x10000 && numCh == (num + 0xFFFF) / 0x10000)
+                            && maxCh == (max + 0xFFFF) / 0x10000 && numCh >= (num + 0xFFFF) / 0x10000 && numCh <= maxCh)
                         {
                             ObjObjects = a;
-                            log($"GUObjectArray.ObjObjects @ +0x{a - M.Base:X} num={num} max={max}");
+                            if (DetectItemLayout())
+                                log($"GUObjectArray.ObjObjects @ +0x{a - M.Base:X} num={num} max={max} chunks={numCh}/{maxCh}");
+                            else ObjObjects = 0;
                         }
                     }
                     // --- FNamePool.Blocks[0] -> "None", "ByteProperty"
@@ -132,27 +135,27 @@ public sealed class UE
         }
         if (ObjObjects == 0 || NamePoolBlocks == 0) return false;
 
-        // FUObjectItem size: object #1's InternalIndex must be 1
-        bool okItem = false;
+        log($"FUObjectItem size={ItemSize} objOff={ItemObj}");
+        return DetectFieldLayout(log);
+    }
+
+    // FUObjectItem size / object pointer offset: object #t's InternalIndex must be t.
+    bool DetectItemLayout()
+    {
         foreach (int sz in new[] { 24, 16, 32, 40 })
-        {
             foreach (int ob in new[] { 0, 8, 16 })
             {
                 if (ob >= sz) continue;
                 ItemSize = sz; ItemObj = ob;
-                okItem = true;
+                bool ok = true;
                 foreach (int t in new[] { 1, 2, 5, 77, 1000 })
                 {
                     ulong ot = GetObject(t);
-                    if (!Mem.ValidPtr(ot) || M.R<int>(ot + O_Index) != t) { okItem = false; break; }
+                    if (!Mem.ValidPtr(ot) || M.R<int>(ot + O_Index) != t) { ok = false; break; }
                 }
-                if (okItem) break;
+                if (ok) return true;
             }
-            if (okItem) break;
-        }
-        log($"FUObjectItem size={ItemSize} objOff={ItemObj} ok={okItem}");
-        if (!okItem) return false;
-        return DetectFieldLayout(log);
+        return false;
     }
 
     public string Name(uint idx)
@@ -193,14 +196,73 @@ public sealed class UE
 
     public ulong FindObject(string fullName)
     {
+        // Cheap check on the object's own name first; build the full path only for those.
+        int sp = fullName.IndexOf(' ');
+        string last = fullName[(sp + 1)..];
+        int cut = last.LastIndexOfAny(new[] { '.', '/', ':' });
+        if (cut >= 0) last = last[(cut + 1)..];
         int n = NumObjects;
         for (int i = 0; i < n; i++)
         {
             ulong o = GetObject(i);
-            if (o != 0 && FullName(o) == fullName) return o;
+            if (o != 0 && ObjName(o) == last && FullName(o) == fullName) return o;
         }
         return 0;
     }
+
+    // Reads all object pointers of one GUObjectArray chunk in a single call.
+    public int ReadChunk(int chunk, ulong[] dst, byte[] scratch)
+    {
+        ulong chunks = M.P(ObjObjects);
+        ulong c = M.P(chunks + (ulong)chunk * 8);
+        int count = Math.Min(0x10000, NumObjects - chunk * 0x10000);
+        if (c == 0 || count <= 0 || !M.Read(c, scratch, count * ItemSize)) return 0;
+        for (int i = 0; i < count; i++) dst[i] = BitConverter.ToUInt64(scratch, i * ItemSize + ItemObj);
+        return count;
+    }
+
+    // FWeakObjectPtr = { ObjectIndex, ObjectSerialNumber }
+    public ulong Weak(ulong addr)
+    {
+        int idx = M.R<int>(addr);
+        return idx > 0 && idx < NumObjects ? GetObject(idx) : 0;
+    }
+
+    public string FString(ulong addr, int maxLen = 256)
+    {
+        ulong data = M.P(addr);
+        int len = M.R<int>(addr + 8);
+        if (!Mem.ValidPtr(data) || len <= 1 || len > maxLen) return "";
+        var b = new byte[(len - 1) * 2];
+        return M.Read(data, b, b.Length) ? Encoding.Unicode.GetString(b) : "";
+    }
+
+    // UEnum names in value order ("EFoo::Bar" -> "Bar"), until the *_MAX entry.
+    public string[] EnumNames(ulong en)
+    {
+        if (en == 0) return Array.Empty<string>();
+        for (int off = 0x30; off <= 0x60; off += 8)
+        {
+            ulong arr = M.P(en + (ulong)off) & ~7UL;
+            if (!Mem.ValidPtr(arr)) continue;
+            foreach (int stride in new[] { 8, 16 })
+            {
+                var list = new List<string>();
+                for (int k = 0; k < 512; k++)
+                {
+                    var s = Name(M.R<uint>(arr + (ulong)(k * stride)));
+                    if (s == null || !s.Contains("::")) break;
+                    s = s[(s.LastIndexOf("::") + 2)..];
+                    if (s.EndsWith("_MAX")) return list.ToArray();
+                    list.Add(s);
+                }
+            }
+        }
+        return Array.Empty<string>();
+    }
+
+    // Size of a UScriptStruct / UClass instance.
+    public int StructSize(ulong st) => M.R<int>(st + (ulong)S_ChildProps + 8);
 
     public bool IsA(ulong obj, ulong cls)
     {

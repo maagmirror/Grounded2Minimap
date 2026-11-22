@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj": {}
+    "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj": {}
   },
   "projects": {
-    "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj": {
+    "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+        "projectUniqueName": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
         "projectName": "Extractor",
-        "projectPath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+        "projectPath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
         "packagesPath": "C:\\Users\\maagk\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\obj\\",
+        "outputPath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

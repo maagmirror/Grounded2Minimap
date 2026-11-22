@@ -1,0 +1,4 @@
+dist/*.log
+# caches generated from the game files on each machine
+dist/maps/
+dist/icons/

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "rD46Mnva5H8=",
+  "dgSpecHash": "LkigeqAB1TA=",
   "success": true,
-  "projectFilePath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+  "projectFilePath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\maagk\\.nuget\\packages\\assetripper.texturedecoder\\2.6.2\\assetripper.texturedecoder.2.6.2.nupkg.sha512",
     "C:\\Users\\maagk\\.nuget\\packages\\berrysoft.xxtea\\4.0.9\\berrysoft.xxtea.4.0.9.nupkg.sha512",
@@ -53,9 +53,9 @@
       "code": "NU1903",
       "level": "Warning",
       "message": "El paquete \"Microsoft.Bcl.Memory\" 9.0.0 tiene una vulnerabilidad de gravedad alta conocida, https://github.com/advisories/GHSA-73j8-2gch-69rq",
-      "projectPath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "projectPath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "filePath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "libraryId": "Microsoft.Bcl.Memory",
       "targetGraphs": [
         "net10.0"
@@ -65,9 +65,9 @@
       "code": "NU1902",
       "level": "Warning",
       "message": "El paquete \"SixLabors.ImageSharp\" 3.1.12 tiene una vulnerabilidad de gravedad moderada conocida, https://github.com/advisories/GHSA-gwg2-r3hj-4w44",
-      "projectPath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "projectPath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "filePath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "libraryId": "SixLabors.ImageSharp",
       "targetGraphs": [
         "net10.0"
@@ -77,9 +77,9 @@
       "code": "NU1903",
       "level": "Warning",
       "message": "El paquete \"SixLabors.ImageSharp\" 3.1.12 tiene una vulnerabilidad de gravedad alta conocida, https://github.com/advisories/GHSA-j3p4-wp97-rph4",
-      "projectPath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "projectPath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "filePath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "libraryId": "SixLabors.ImageSharp",
       "targetGraphs": [
         "net10.0"
@@ -89,9 +89,9 @@
       "code": "NU1903",
       "level": "Warning",
       "message": "El paquete \"SixLabors.ImageSharp\" 3.1.12 tiene una vulnerabilidad de gravedad alta conocida, https://github.com/advisories/GHSA-j9gm-c75j-xc9q",
-      "projectPath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "projectPath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "filePath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "libraryId": "SixLabors.ImageSharp",
       "targetGraphs": [
         "net10.0"
@@ -101,9 +101,9 @@
       "code": "NU1903",
       "level": "Warning",
       "message": "El paquete \"SixLabors.ImageSharp\" 3.1.12 tiene una vulnerabilidad de gravedad alta conocida, https://github.com/advisories/GHSA-jjfr-hcj7-qf5w",
-      "projectPath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "projectPath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "filePath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "libraryId": "SixLabors.ImageSharp",
       "targetGraphs": [
         "net10.0"
@@ -113,9 +113,9 @@
       "code": "NU1903",
       "level": "Warning",
       "message": "El paquete \"SixLabors.ImageSharp\" 3.1.12 tiene una vulnerabilidad de gravedad alta conocida, https://github.com/advisories/GHSA-v76p-62qx-wwq2",
-      "projectPath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "projectPath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "filePath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "libraryId": "SixLabors.ImageSharp",
       "targetGraphs": [
         "net10.0"
@@ -125,9 +125,9 @@
       "code": "NU1902",
       "level": "Warning",
       "message": "El paquete \"SixLabors.ImageSharp\" 3.1.12 tiene una vulnerabilidad de gravedad moderada conocida, https://github.com/advisories/GHSA-wmxv-xphr-5c9g",
-      "projectPath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "projectPath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\maagk\\GroundedMinimap\\Extractor\\Extractor.csproj",
+      "filePath": "C:\\Users\\maagk\\Documents\\GitHub\\ecommerce-nibiru\\middlewares\\Grounded2Minimap\\Extractor\\Extractor.csproj",
       "libraryId": "SixLabors.ImageSharp",
       "targetGraphs": [
         "net10.0"
