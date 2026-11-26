@@ -58,7 +58,12 @@ public sealed class Snapshot
 // position is optional: if a game update renames something, only that feature turns off.
 public sealed class GameReader
 {
-    const string ProcName = "Grounded2Steam-Win64-Shipping";
+    // Steam and Xbox app (WinGDK / Game Pass) shipping builds.
+    static readonly string[] ProcNames =
+    {
+        "Grounded2Steam-Win64-Shipping",
+        "Grounded2-WinGDK-Shipping",
+    };
 
     public volatile Snapshot Snap = new();
     public volatile string Status = L.T("Looking for Grounded 2...", "Buscando Grounded 2...");
@@ -174,10 +179,17 @@ public sealed class GameReader
 
     bool TryAttach()
     {
-        m = Mem.Attach(ProcName);
-        if (m == null) return false;
+        m = Mem.Attach(ProcNames);
+        if (m == null)
+        {
+            // Process is up but OpenProcess / MainModule failed — typical for locked Game Pass titles.
+            if (Mem.IsRunning(ProcNames))
+                Status = L.T("Game found, but it can't be read (try running as admin?)", "Juego encontrado, pero no se puede leer (¿probar como administrador?)");
+            return false;
+        }
         Status = L.T("Reading game data...", "Leyendo datos del juego...");
         try { GameExePath = System.Diagnostics.Process.GetProcessById(m.Pid).MainModule?.FileName; } catch { }
+        Log($"Attached to {System.IO.Path.GetFileName(GameExePath) ?? ("pid " + m.Pid)}");
         ue = new UE(m);
         if (!ue.Init(_ => { })) { Status = L.T("Could not read the game (incompatible version?)", "No se pudo leer el juego (¿versión incompatible?)"); m.Dispose(); m = null; return false; }
         return true;
