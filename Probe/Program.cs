@@ -1,8 +1,15 @@
 using System.Diagnostics;
 
 var sw = Stopwatch.StartNew();
-var m = Mem.Attach("Grounded2Steam-Win64-Shipping");
-if (m == null) { Console.WriteLine("game not found / cannot open"); return; }
+var m = Mem.Attach("Grounded2Steam-Win64-Shipping", "Grounded2-WinGDK-Shipping");
+if (m == null)
+{
+    if (Mem.IsRunning("Grounded2Steam-Win64-Shipping", "Grounded2-WinGDK-Shipping"))
+        Console.WriteLine("game is running but cannot open (access denied? try admin)");
+    else
+        Console.WriteLine("game not found");
+    return;
+}
 var ue = new UE(m);
 if (!ue.Init(Console.WriteLine)) { Console.WriteLine("init failed"); return; }
 Console.WriteLine($"init {sw.ElapsedMilliseconds}ms, objects={ue.NumObjects}");

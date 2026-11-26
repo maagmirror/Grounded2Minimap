@@ -1,6 +1,6 @@
 # Grounded 2 Minimap
 
-An overlay minimap for **Grounded 2** (Steam). It sits in the top-right corner of the screen and shows where you are, which way you're facing, your friends, and the same things the in-game map shows: your markers, beds, pings, quests, dropped backpack, pet, collectibles and discovered places, with the game's own icons and colors.
+An overlay minimap for **Grounded 2** (Steam and Xbox app / Game Pass). It sits in the top-right corner of the screen and shows where you are, which way you're facing, your friends, and the same things the in-game map shows: your markers, beds, pings, quests, dropped backpack, pet, collectibles and discovered places, with the game's own icons and colors.
 
 - **Read-only**: it reads the game's memory with `ReadProcessMemory`. It never writes to the game, injects nothing and doesn't modify game files (the `.pak` files are only read).
 - **Lightweight**: around 0.1% CPU, and it doesn't touch the game's GPU.
@@ -114,7 +114,7 @@ Grounded2Minimap/
 
 ### Attaching (`UE.cs`)
 
-1. Opens `Grounded2Steam-Win64-Shipping.exe` with read access only.
+1. Opens the running game (`Grounded2Steam-Win64-Shipping.exe` or `Grounded2-WinGDK-Shipping.exe`) with read access only.
 2. Scans the exe's data sections for two Unreal globals, without byte signatures:
    - **FNamePool**: the first block starts with `"None"` followed by `"ByteProperty"`.
    - **GUObjectArray**: the `Objects*, PreAlloc*, Max, Num, MaxChunks, NumChunks` pattern. `NumChunks` can be larger than `Num` needs (the engine preallocates chunks), so each candidate is checked against the index of several objects before it's accepted. The item size (24 bytes in Grounded 2) is detected too.
@@ -136,7 +136,7 @@ Places and creatures come from a separate thread that walks `GUObjectArray` ever
 
 ### Maps and icons (`MapStore.cs`, `IconStore.cs`, `Extractor/`)
 
-- The `.pak` folder comes from the game's exe path (`<Project>\Binaries\Win64` → `<Project>\Content\Paks`).
+- The `.pak` folder comes from the game's exe path (`<Project>\Binaries\Win64` or `WinGDK` → `<Project>\Content\Paks`).
 - **Map**: the extractor opens the background widget named in `LevelData`, finds the texture it references and decodes it into `dist\maps\<Level>.png`, together with a fingerprint of the `.pak` files (size + date). When a patch changes them, the map is extracted again in the background while the old one stays on screen.
 - **Icons**: the extractor gets the list of textures the game's map uses and saves them to `dist\icons\`. They're tinted with the marker's color, like in the game. Icons the game draws with materials (which can't be extracted) use the matching legend icon, or a simple shape.
 - There are no public mappings (`.usmap`) for this version, so textures are read from the raw package bytes: the pixel format (`PF_BC7`, etc.) comes from the name table and the single mip sits at the end of the file. The size comes from `LevelData` (map) or from the file size (square icons).
@@ -144,7 +144,9 @@ Places and creatures come from a separate thread that walks `GUObjectArray` ever
 Running the extractor by hand:
 
 ```powershell
+# Steam or Xbox app — both put Paks under Augusta\Content\Paks
 $paks = "<Steam library>\steamapps\common\Grounded2\Augusta\Content\Paks"
+# $paks = "C:\XboxGames\Grounded 2\Content\Augusta\Content\Paks"
 dist\extractor\Extractor.exe map   $paks Augusta /Game/UI/Map/UI_MapBGBackyard 4096 4096 map.png
 dist\extractor\Extractor.exe icons $paks Augusta .\icons /Game/UI/Images/MapIcons/T_UI_Flag_Map_Home
 ```
@@ -160,5 +162,5 @@ Prints the structures it found, the resolved offsets, the local pawn and its pos
 
 ## Notes
 
-- Tested with Steam build `Augusta-CL-3235807`.
+- Tested with Steam build `Augusta-CL-3235807`. Xbox app (`Grounded2-WinGDK-Shipping`) uses the same attach path; if the game is running but the overlay says it can't be read, try running the overlay as administrator.
 - Grounded 2 has no anti-cheat. Still, this is an unofficial external tool: use it at your own risk.

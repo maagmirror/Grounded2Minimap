@@ -112,7 +112,7 @@ public sealed class MapStore
         finally { lock (extracting) extracting.Remove(level.Name); }
     }
 
-    // ...\<Project>\Binaries\Win64\Game.exe -> ...\<Project>\Content\Paks
+    // ...\<Project>\Binaries\Win64|WinGDK\Game.exe -> ...\<Project>\Content\Paks
     internal static string PaksDir(string gameExe, out string project)
     {
         project = null;

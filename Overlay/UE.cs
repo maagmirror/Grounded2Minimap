@@ -17,17 +17,32 @@ public sealed class Mem : IDisposable
     public int ModuleSize;
     public int Pid;
 
-    public static Mem Attach(string procName)
+    // Tries each process name (Steam, Xbox/WinGDK, …). Returns null if none are running
+    // or if the process can't be opened for read (common on some Game Pass builds).
+    public static Mem Attach(params string[] procNames)
     {
-        var p = Process.GetProcessesByName(procName).FirstOrDefault();
-        if (p == null) return null;
-        var m = new Mem { Pid = p.Id };
-        m.Handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_LIMITED, false, p.Id);
-        if (m.Handle == IntPtr.Zero) return null;
-        m.Base = (ulong)p.MainModule.BaseAddress;
-        m.ModuleSize = p.MainModule.ModuleMemorySize;
-        return m;
+        foreach (var procName in procNames)
+        {
+            foreach (var p in Process.GetProcessesByName(procName))
+            {
+                try
+                {
+                    var m = new Mem { Pid = p.Id };
+                    m.Handle = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_LIMITED, false, p.Id);
+                    if (m.Handle == IntPtr.Zero) continue;
+                    m.Base = (ulong)p.MainModule.BaseAddress;
+                    m.ModuleSize = p.MainModule.ModuleMemorySize;
+                    return m;
+                }
+                catch { /* MainModule can throw on locked / store processes */ }
+            }
+        }
+        return null;
     }
+
+    // True if any of the named processes is running (even when OpenProcess fails).
+    public static bool IsRunning(params string[] procNames)
+        => procNames.Any(n => Process.GetProcessesByName(n).Length > 0);
 
     public bool Alive => GetExitCodeProcess(Handle, out var c) && c == 259;
 
